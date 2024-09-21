@@ -11,11 +11,16 @@ import (
 
 	"github.com/jlabath/netpod/server/pod"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // helper types for decoding from clojure
+type HexObjID struct {
+	ObjectiveID string
+}
+
 type filterTuple bson.E
 
 func (r *filterTuple) UnmarshalJSON(data []byte) error {
@@ -27,16 +32,31 @@ func (r *filterTuple) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("filter tuple must have 2 values but got %d", len(slice))
 	}
 	var (
-		key string
-		val interface{}
+		key   string
+		val   interface{}
+		objId HexObjID
 	)
 	if err := json.Unmarshal(slice[0], &key); err != nil {
 		return err
 	}
+	r.Key = key
+
+	//val could be objective id so try that first
+	//for example
+	//{"ObjectiveID": "000000000000000000000000"}
+	if err := json.Unmarshal(slice[1], &objId); err == nil {
+		if oid, err := primitive.ObjectIDFromHex(objId.ObjectiveID); err == nil {
+			//cool it's valid oid
+			r.Value = oid
+			return nil
+		}
+	}
+
+	//else just do interface{}
 	if err := json.Unmarshal(slice[1], &val); err != nil {
 		return err
 	}
-	r.Key = key
+
 	r.Value = val
 	return nil
 }
@@ -173,6 +193,26 @@ func findMany(client *mongo.Client) pod.Handler {
 		opts := options.Find()
 		if projection, ok := userOptions["projection"]; ok {
 			opts.SetProjection(projection)
+		}
+
+		if sort, ok := userOptions["sort"]; ok {
+			opts.SetSort(sort)
+		}
+
+		if val, ok := userOptions["allow-disk-use"]; ok {
+			if r, ok := val.(bool); ok {
+				opts.SetAllowDiskUse(r)
+			} else {
+				log.Printf("unexpected value for allow-disk-use: %v", val)
+			}
+		}
+
+		if val, ok := userOptions["limit"]; ok {
+			if r, ok := val.(float64); ok {
+				opts.SetLimit(int64(r))
+			} else {
+				log.Printf("unexpected value for limit: %v", val)
+			}
 		}
 
 		var results []bson.M
