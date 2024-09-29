@@ -18,7 +18,7 @@ import (
 
 // helper types for decoding from clojure
 type HexObjID struct {
-	ObjectiveID string
+	ObjectId string
 }
 
 type filterTuple bson.E
@@ -43,9 +43,9 @@ func (r *filterTuple) UnmarshalJSON(data []byte) error {
 
 	//val could be objective id so try that first
 	//for example
-	//{"ObjectiveID": "000000000000000000000000"}
+	//{"ObjectId": "000000000000000000000000"}
 	if err := json.Unmarshal(slice[1], &objId); err == nil {
-		if oid, err := primitive.ObjectIDFromHex(objId.ObjectiveID); err == nil {
+		if oid, err := primitive.ObjectIDFromHex(objId.ObjectId); err == nil {
 			//cool it's valid oid
 			r.Value = oid
 			return nil
