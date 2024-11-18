@@ -262,7 +262,7 @@ func main() {
 
 		Format: "json",
 		Namespaces: []pod.Namespace{pod.Namespace{
-			Name: "netpod.mongo",
+			Name: "netpod.jlabath.mongo",
 			Vars: []pod.Var{pod.Var{
 				Name:    "list-collections",
 				Handler: listCollections(client)},
