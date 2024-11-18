@@ -1,4 +1,4 @@
-module github.com/jlabath/netpod-mongo
+module github.com/jlabath/netpod-jlabath-mongo
 
 go 1.23.0
 
